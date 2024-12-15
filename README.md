@@ -1,2 +1,6 @@
 # cheetoApp
- personal discord bot
+silly little personal bot
+
+# required packages
+- pycord
+- python-dotenv
