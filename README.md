@@ -2,5 +2,5 @@
 silly little personal bot
 
 # required packages
-- pycord
+- py-cord
 - python-dotenv
