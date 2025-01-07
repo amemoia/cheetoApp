@@ -92,6 +92,18 @@ async def reload_cog(ctx, extension: str):
     except Exception as e:
         await ctx.send(f"Failed to reload {extension} cog. Error: {e}")
 
+@client.command(name="embed")
+async def embed_test(ctx):
+    if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
+    msg = "The bot is up to date!"
+    await tools.respondEmbed(
+        title="Update check complete!",
+        emoji="👍",
+        msg=msg,
+        type="message",
+        ctx=ctx, client=client
+    )
+
 # Check if the bot was restarted using the restart command
 restarted = os.getenv("RESTARTED", "false").lower() == "true"
 restart_channel_id = int(os.getenv("RESTART_CHANNEL_ID", "0"))
