@@ -27,7 +27,7 @@ def printFormat(msg: str, type: str = "message"):
     #    number of spaces preceding the console message (i just think it looks neat)
     indentation = 4
     #    time for timestamp, formatted as hrs:min:sec
-    cur_time = datetime.datetime.now().strftime("%H:%M:%S")
+    cur_time = datetime.now().strftime("%H:%M:%S")
 
     print(
         f"{' ' * indentation}"  # print {indentation} amount of spaces

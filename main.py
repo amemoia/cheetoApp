@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands
-import datetime
 import time
 import os
 import sys
 import subprocess
 from dotenv import load_dotenv
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import asyncio
+from apscheduler.schedulers.background import BackgroundScheduler
 import tools
 
 
@@ -17,7 +17,7 @@ intents = discord.Intents.all()
 
 #   updating the bot through the git repo
 #   requires apscheduler
-scheduler = AsyncIOScheduler()
+scheduler = BackgroundScheduler()
 
 load_dotenv()
 client = commands.Bot(intents=intents, command_prefix=commands.when_mentioned)
@@ -108,66 +108,66 @@ async def restart_bot(ctx):
 @client.command(name="update")
 async def update_bot(ctx):
     if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
-    match check_updates():
-        case 0:
-            msg = "The bot is up to date!"
-            await tools.respondEmbed(
-                title="Update check complete!",
-                emoji="👍",
-                msg=msg,
-                type="message",
-                ctx=ctx, client=client
-            )
-        case 1:
-            msg = "Update available, wanna install it?"
-            await tools.respondEmbed(
-                title="Update Available!",
-                emoji="⚠️",
-                msg=msg,
-                type="warning",
-                ctx=ctx, client=client
-            )
+    update_status = check_updates()
+    if update_status == 0:
+        msg = "The bot is up to date!"
+        await tools.respondEmbed(
+            title="Update check complete!",
+            emoji="👍",
+            msg=msg,
+            type="message",
+            ctx=ctx, client=client
+        )
+    elif update_status == 1:
+        msg = "Update available, wanna install it?"
+        await tools.respondEmbed(
+            title="Update Available!",
+            emoji="⚠️",
+            msg=msg,
+            type="warning",
+            ctx=ctx, client=client
+        )
 
-            answer = False
-            positiveAnswers = ['yes', 'y', 'ye', 'yeah']
-            if str(answer.lower()) in positiveAnswers:
-                pull = subprocess.run(args=['git', 'pull'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if pull.returncode != 0:
-                    tools.printFormat(f"Update failed! This can happen if you modified any files. I'll stop checking for updates until the next reboot of the bot. \n-----\n{pull.stderr} \n {pull.stdout}\n-----\n", "error")
-                    msg = "Update failed! Check the console."
-                    await tools.respondEmbed(
-                        title="Update failed!",
-                        emoji="🔴",
-                        msg=msg,
-                        type="error",
-                        ctx=ctx, client=client
-                    )
-                    scheduler.pause()
-                else:
-                    tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
-                    msg = "Restarting in 10 seconds..."
-                    await tools.respondEmbed(
-                        title="Update complete!",
-                        emoji="👍",
-                        msg=msg,
-                        type="warning",
-                        ctx=ctx, client=client
-                    )
-                    
-                    time.sleep(10)
-                    os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
-        
-        case 2:
-            tools.printFormat(f"Update failed! Git is not installed to PATH.", "error")
-            msg = "Update failed! Git is not installed to PATH. "
-            await tools.respondEmbed(
-                title="Update failed!",
-                emoji="🔴",
-                msg=msg,
-                type="error",
-                ctx=ctx, client=client
-            )
-            scheduler.pause()
+        answer = False
+        positiveAnswers = ['yes', 'y', 'ye', 'yeah']
+        if str(answer.lower()) in positiveAnswers:
+            pull = subprocess.run(args=['git', 'pull'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if pull.returncode != 0:
+                tools.printFormat(f"Update failed! This can happen if you modified any files. I'll stop checking for updates until the next reboot of the bot. \n-----\n{pull.stderr} \n {pull.stdout}\n-----\n", "error")
+                msg = "Update failed! Check the console."
+                await tools.respondEmbed(
+                    title="Update failed!",
+                    emoji="🔴",
+                    msg=msg,
+                    type="error",
+                    ctx=ctx, client=client
+                )
+                scheduler.pause()
+            else:
+                tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
+                msg = "Restarting in 10 seconds..."
+                await tools.respondEmbed(
+                    title="Update complete!",
+                    emoji="👍",
+                    msg=msg,
+                    type="warning",
+                    ctx=ctx, client=client
+                )
+                
+                time.sleep(10)
+                os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+    
+    elif update_status == 2:
+        tools.printFormat(f"Update failed! Git is not installed to PATH.", "error")
+        msg = "Update failed! Git is not installed to PATH. "
+        await tools.respondEmbed(
+            title="Update failed!",
+            emoji="🔴",
+            msg=msg,
+            type="error",
+            ctx=ctx, client=client
+        )
+        scheduler.pause()
 
 #    Startup
 
@@ -185,6 +185,7 @@ async def on_ready():
             await channel.send("back")
     print('\n')
 
+@scheduler.scheduled_job('interval', hours=1)
 def check_updates():
     """Update check, requires git installed to PATH. Originally from Aigis idk i was on crack when i wrote this."""
     tools.printFormat("Checking for bot updates...")
@@ -205,10 +206,7 @@ def check_updates():
         tools.printFormat("Update check complete, you're up to date!")
 
 #    Add updates to schedule
-scheduler.add_job(check_updates, 'interval', hours=1)
-scheduler.start()
 check_updates()
-
 #    Automatically load cogs from the cogs directory
 cogs_dir = "cogs"
 cogs = [f"{cogs_dir}.{filename[:-3]}" for filename in os.listdir(cogs_dir) if filename.endswith(".py")]
