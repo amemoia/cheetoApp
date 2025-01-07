@@ -68,5 +68,5 @@ async def respondEmbed(
         return ctx.respond(f"check the console dumbass.\nOriginal message: '{msg}'")
     
     embed = discord.Embed(title=title, description=msg, color=color, timestamp=datetime.now(timezone.utc))
-    embed.set_footer(icon_url=client.user.avatar_url, text=client.user.name)
+    embed.set_footer(icon_url=client.user.avatar.url, text=client.user.name)
     await ctx.respond(embed=embed)
