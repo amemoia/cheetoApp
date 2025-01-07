@@ -65,8 +65,8 @@ async def respondEmbed(
     color = get_color(type)
     if not ctx or not client:
         printFormat("respondEmbed didn't get ctx and/or client", "error")
-        return ctx.send(f"check the console dumbass.\nOriginal message: '{msg}'")
+        return ctx.respond(f"check the console dumbass.\nOriginal message: '{msg}'")
     
     embed = discord.Embed(title=title, description=msg, color=color, timestamp=datetime.now(timezone.utc))
     embed.set_footer(icon_url=client.user.avatar_url, text=client.user.name)
-    await ctx.send(embed=embed)
+    await ctx.respond(embed=embed)
