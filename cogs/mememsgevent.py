@@ -7,7 +7,8 @@ class MemeMsgEvent(commands.Cog):
         self.msgEvents = {
             "massive" : "https://tenor.com/view/ninja-any-haircut-recommendations-low-taper-fade-you-know-what-else-is-massive-gif-3708438262570242561",
             "dragon"  : "LIKE A WHAT 🐉🔥",
-            "egypt" : "https://tenor.com/view/eye-of-rah-adrian-explain-our-friendgroup-tiktok-meme-reels-gif-8580965088318146552"
+            "egypt" : "https://tenor.com/view/eye-of-rah-adrian-explain-our-friendgroup-tiktok-meme-reels-gif-8580965088318146552",
+            "that is crazy" : "https://tenor.com/view/vaas-far-cry3-that-is-crazy-gif-26006603"
         }
 
     @commands.Cog.listener()
