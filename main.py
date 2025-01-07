@@ -122,6 +122,7 @@ async def restart_bot(ctx):
 async def shutdown(ctx):
     if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
     await ctx.send("Logging out...")
+    exit()
 
 @client.command(name="update")
 async def update_bot(ctx):
