@@ -7,6 +7,7 @@ import subprocess
 from dotenv import load_dotenv
 import asyncio
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers import SchedulerNotRunningError
 import tools
 
 
@@ -139,43 +140,51 @@ async def update_bot(ctx):
         )
     elif update_status == 1:
         msg = "Update available, wanna install it?"
+
+        class UpdateButtons(discord.ui.View):
+
+            @discord.ui.button(style=discord.ButtonStyle.green, custom_id="yea", label="Update")
+            async def yesbutton(self, button, interaction: discord.Interaction):
+                if not await client.is_owner(interaction.user): return
+                self.disable_all_items()
+                origin = interaction.message
+                await origin.edit(view=self)
+                pull = subprocess.run(args=['git', 'pull'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if pull.returncode != 0:
+                    tools.printFormat(f"Update failed! This can happen if you modified any files. I'll stop checking for updates until the next reboot of the bot. \n-----\n{pull.stderr} \n {pull.stdout}\n-----\n", "error")
+                    msg = "Update failed! Check the console."
+                    await interaction.response.send_message(content=msg)
+                    try: scheduler.pause()
+                    except SchedulerNotRunningError: pass
+                else:
+                    tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
+                    msg = "Restarting in 10 seconds..."
+                    await interaction.response.send_message(content=msg)
+                    
+                    time.sleep(10)
+                    os.environ["RESTARTED"] = "true"
+                    os.environ["RESTART_CHANNEL_ID"] = str(ctx.channel.id)
+                    os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+                await interaction.delete_original_response()
+
+            @discord.ui.button(style=discord.ButtonStyle.red, custom_id="nah", label="Nope")
+            async def nobutton(self, button, interaction):
+                if not await client.is_owner(interaction.user): return
+                self.disable_all_items()
+                origin = interaction.message
+                await origin.edit(view=self)
+                msg = "Okay, not updating."
+                await interaction.response.send_message(content=msg)
+                
+
         await tools.respondEmbed(
             title="Update Available!",
             emoji="⚠️",
             msg=msg,
             type="warning",
-            ctx=ctx, client=client
+            ctx=ctx, client=client, view=UpdateButtons(timeout=30)
         )
 
-        answer = False
-        positiveAnswers = ['yes', 'y', 'ye', 'yeah']
-        if str(answer.lower()) in positiveAnswers:
-            pull = subprocess.run(args=['git', 'pull'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if pull.returncode != 0:
-                tools.printFormat(f"Update failed! This can happen if you modified any files. I'll stop checking for updates until the next reboot of the bot. \n-----\n{pull.stderr} \n {pull.stdout}\n-----\n", "error")
-                msg = "Update failed! Check the console."
-                await tools.respondEmbed(
-                    title="Update failed!",
-                    emoji="🔴",
-                    msg=msg,
-                    type="error",
-                    ctx=ctx, client=client
-                )
-                scheduler.pause()
-            else:
-                tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
-                msg = "Restarting in 10 seconds..."
-                await tools.respondEmbed(
-                    title="Update complete!",
-                    emoji="👍",
-                    msg=msg,
-                    type="warning",
-                    ctx=ctx, client=client
-                )
-                
-                time.sleep(10)
-                os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
-    
     elif update_status == 2:
         tools.printFormat(f"Update failed! Git is not installed to PATH.", "error")
         msg = "Update failed! Git is not installed to PATH. "
@@ -186,7 +195,21 @@ async def update_bot(ctx):
             type="error",
             ctx=ctx, client=client
         )
-        scheduler.pause()
+        try: scheduler.pause()
+        except SchedulerNotRunningError: pass
+    
+    else:
+        tools.printFormat(f"Something went wrong while updating.", "error")
+        msg = "Something went wrong while updating. "
+        await tools.respondEmbed(
+            title="Update failed!",
+            emoji="🔴",
+            msg=msg,
+            type="error",
+            ctx=ctx, client=client
+        )
+        try: scheduler.pause()
+        except SchedulerNotRunningError: pass
 
 #    Startup
 
@@ -223,6 +246,7 @@ def check_updates():
         return 1
     else:
         tools.printFormat("Update check complete, you're up to date!")
+        return 0
 
 #    Add updates to schedule
 check_updates()

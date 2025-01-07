@@ -55,7 +55,8 @@ async def respondEmbed(
     msg = None,
     type: str = "message",
     ctx = None,
-    client = None
+    client = None,
+    view = None
 ):
     #    check if right type is used
     types = ["message", "warning", "error"]
@@ -69,4 +70,4 @@ async def respondEmbed(
     
     embed = discord.Embed(title=title, description=msg, color=color, timestamp=datetime.now(timezone.utc))
     embed.set_footer(icon_url=client.user.avatar.url, text=client.user.name)
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, view=view)

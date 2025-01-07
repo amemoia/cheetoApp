@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-class MemeMsgEvent(commands.Cog):
+class MsgEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.msgEvents = {
@@ -21,4 +21,4 @@ class MemeMsgEvent(commands.Cog):
                 return await message.channel.send(answer)
 
 def setup(client):
-    client.add_cog(MemeMsgEvent(client))
+    client.add_cog(MsgEvent(client))
