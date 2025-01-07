@@ -1,52 +1,26 @@
 import discord
 from discord.ext import commands
 import datetime
+import time
 import os
 import sys
+import subprocess
 from dotenv import load_dotenv
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import tools
+
 
 #   presences, members and message_content intents are privileged intents
 #   This intent is privileged, meaning that bots in over 100 guilds that require this intent would need to request this intent on the Developer Portal.
 #   https://docs.pycord.dev/en/stable/api/data_classes.html#discord.Intents.presences
 intents = discord.Intents.all()
 
+#   updating the bot through the git repo
+#   requires apscheduler
+scheduler = AsyncIOScheduler()
+
 load_dotenv()
 client = commands.Bot(intents=intents, command_prefix=commands.when_mentioned)
-
-def printFormat(msg: str, type: str = "message"):
-    """small function to simplify console output formatting
-
-    Args:
-        msg (str): the message we want to print
-        type (str): "message", "warning" or "error". Set to "message" by default.
-    """
-
-    #    symbols used for formatting
-    types = {
-        "message" : ">>>",
-        "warning" : "###",
-        "error"   : "!!!"
-    }
-
-    #    check if right type is used
-    if type not in types.keys():
-        return printFormat(
-            f"Incorrect type argument in printFormat()\n" +
-            f"Original message: \n{msg}",
-            type="error"
-            )
-
-    #    number of spaces preceding the console message (i just think it looks neat)
-    indentation = 4
-    #    time for timestamp, formatted as hrs:min:sec
-    cur_time = datetime.datetime.now().strftime("%H:%M:%S")
-
-    print(
-        f"{' ' * indentation}"  # print {indentation} amount of spaces
-        + f"[{cur_time}]  "     # formatted timestamp plus two spaces
-        + f"{types[type]}  "     # type symbol as seen in {types} dict plus two spaces
-        + msg                   # the message itself
-        )
     
 @client.slash_command(name="invite", description="Generates an invite link for the bot")
 async def generate_invite(ctx):
@@ -131,21 +105,109 @@ async def restart_bot(ctx):
     os.environ["RESTART_CHANNEL_ID"] = str(ctx.channel.id)
     os.execv(sys.executable, ['python'] + sys.argv)
 
+@client.command(name="update")
+async def update_bot(ctx):
+    if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
+    match check_updates():
+        case 0:
+            msg = "The bot is up to date!"
+            await tools.respondEmbed(
+                title="Update check complete!",
+                emoji="👍",
+                msg=msg,
+                type="message",
+                ctx=ctx, client=client
+            )
+        case 1:
+            msg = "Update available, wanna install it?"
+            await tools.respondEmbed(
+                title="Update Available!",
+                emoji="⚠️",
+                msg=msg,
+                type="warning",
+                ctx=ctx, client=client
+            )
+
+            answer = False
+            positiveAnswers = ['yes', 'y', 'ye', 'yeah']
+            if str(answer.lower()) in positiveAnswers:
+                pull = subprocess.run(args=['git', 'pull'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if pull.returncode != 0:
+                    tools.printFormat(f"Update failed! This can happen if you modified any files. I'll stop checking for updates until the next reboot of the bot. \n-----\n{pull.stderr} \n {pull.stdout}\n-----\n", "error")
+                    msg = "Update failed! Check the console."
+                    await tools.respondEmbed(
+                        title="Update failed!",
+                        emoji="🔴",
+                        msg=msg,
+                        type="error",
+                        ctx=ctx, client=client
+                    )
+                    scheduler.pause()
+                else:
+                    tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
+                    msg = "Restarting in 10 seconds..."
+                    await tools.respondEmbed(
+                        title="Update complete!",
+                        emoji="👍",
+                        msg=msg,
+                        type="warning",
+                        ctx=ctx, client=client
+                    )
+                    
+                    time.sleep(10)
+                    os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+        
+        case 2:
+            tools.printFormat(f"Update failed! Git is not installed to PATH.", "error")
+            msg = "Update failed! Git is not installed to PATH. "
+            await tools.respondEmbed(
+                title="Update failed!",
+                emoji="🔴",
+                msg=msg,
+                type="error",
+                ctx=ctx, client=client
+            )
+            scheduler.pause()
+
 #    Startup
 
 @client.event
 async def on_ready():
     num_guilds = len(client.guilds)
     print('\n')
-    printFormat("Client online")
-    printFormat(f"Logged in as {client.user.name}")
-    printFormat(f"User ID: {client.user.id}")
-    printFormat(f"Currently in {num_guilds} guilds.")
+    tools.printFormat("Client online")
+    tools.printFormat(f"Logged in as {client.user.name}")
+    tools.printFormat(f"User ID: {client.user.id}")
+    tools.printFormat(f"Currently in {num_guilds} guilds.")
     if restarted and restart_channel_id:
         channel = client.get_channel(restart_channel_id)
         if channel:
             await channel.send("back")
     print('\n')
+
+def check_updates():
+    """Update check, requires git installed to PATH. Originally from Aigis idk i was on crack when i wrote this."""
+    tools.printFormat("Checking for bot updates...")
+    notif = "Your branch is behind"
+    notif2 = ", and can be fast-forwarded"   # just to be sure
+    
+    try:
+        subprocess.run(args=['git', 'remote', 'update'])
+        status = subprocess.run(args=['git', 'status'], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        tools.printFormat("Git not found. Make sure it's installed to PATH.", "error")
+        scheduler.pause()
+        return 2
+    if notif in status.stdout and notif2 in status.stdout:
+        tools.printFormat("Update available! Run @bot update to get the new version.", "warning")
+        return 1
+    else:
+        tools.printFormat("Update check complete, you're up to date!")
+
+#    Add updates to schedule
+scheduler.add_job(check_updates, 'interval', hours=1)
+scheduler.start()
+check_updates()
 
 #    Automatically load cogs from the cogs directory
 cogs_dir = "cogs"
