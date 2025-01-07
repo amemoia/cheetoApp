@@ -117,6 +117,12 @@ async def restart_bot(ctx):
     os.environ["RESTART_CHANNEL_ID"] = str(ctx.channel.id)
     os.execv(sys.executable, ['python'] + sys.argv)
 
+@client.command(name="shutdown", aliases=["exit", "end"])
+@commands.is_owner()
+async def shutdown(ctx):
+    if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
+    await ctx.send("Logging out...")
+
 @client.command(name="update")
 async def update_bot(ctx):
     if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
