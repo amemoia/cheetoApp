@@ -180,7 +180,7 @@ async def update_bot(ctx):
                     except SchedulerNotRunningError: pass
                 else:
                     tools.printFormat("Update complete! Restarting in 5 seconds...", "warning")
-                    msg = "Restarting in 10 seconds..."
+                    msg = "Restarting in 5 seconds..."
                     await interaction.response.send_message(content=msg)
                     
                     time.sleep(5)
