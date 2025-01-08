@@ -157,11 +157,11 @@ async def update_bot(ctx):
                     try: scheduler.pause()
                     except SchedulerNotRunningError: pass
                 else:
-                    tools.printFormat("Update complete! Restarting in 10 seconds...", "warning")
+                    tools.printFormat("Update complete! Restarting in 5 seconds...", "warning")
                     msg = "Restarting in 10 seconds..."
                     await interaction.response.send_message(content=msg)
                     
-                    time.sleep(10)
+                    time.sleep(5)
                     os.environ["RESTARTED"] = "true"
                     os.environ["RESTART_CHANNEL_ID"] = str(ctx.channel.id)
                     os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
