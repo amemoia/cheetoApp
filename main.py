@@ -119,7 +119,7 @@ async def print_log_contents(ctx, lines: str = "5"):
             for line in (file.readlines() [-lines:]):
                 msg += f"{line}\n"
         msg +=  "```"
-        ctx.send(msg)
+        await ctx.send(msg)
     else:
         msg = "Couldn't do that as the log file doesn't exist."
         await tools.respondEmbed(
