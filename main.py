@@ -105,14 +105,15 @@ async def embed_test(ctx):
         ctx=ctx, client=client
     )
 
-@client.command(name="printlog", aliases=['print', 'gimme'])
-async def printLog(ctx, lines: int = 5):
+@client.command(name="print", aliases=['gimme'])
+async def print_log_contents(ctx, lines):
     if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
     if os.path.isfile("./log.txt"):
         msg  =  "```\n"
         msg += f"Last {lines} lines in log.txt:\n\n"
         with open("log.txt") as file:
             # print last n lines
+            lines = int(lines)
             if len(file.readlines()) < lines: lines = len(file.readlines())
             for line in (file.readlines() [-lines:]):
                 msg += f"{line}\n"
