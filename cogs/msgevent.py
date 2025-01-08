@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 
+# just some inside jokes for a server im in
+# that being said, this could eventually be used to make a proper message triggers feature
+
 class MsgEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
