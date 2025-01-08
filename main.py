@@ -111,9 +111,10 @@ async def print_log_contents(ctx, lines: str = "5"):
     if os.path.isfile("./log.txt"):
         msg  =  "```\n"
         msg += f"Last {lines} lines in log.txt:\n\n"
-        with open("log.txt") as file:
+        with open("./log.txt") as file:
             # print last n lines
             lines = int(lines)
+            print(lines)
             if len(file.readlines()) < lines: lines = len(file.readlines())
             for line in (file.readlines() [-lines:]):
                 msg += f"{line}\n"
