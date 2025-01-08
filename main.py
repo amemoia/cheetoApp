@@ -105,6 +105,28 @@ async def embed_test(ctx):
         ctx=ctx, client=client
     )
 
+@client.command(aliases=['print', 'gimme'])
+async def printLog(ctx, lines: int = 5):
+    if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
+    if os.path.isfile("./log.txt"):
+        msg  =  "```\n"
+        msg += f"Last {lines} lines in log.txt:\n\n"
+        with open("log.txt") as file:
+            # print last n lines
+            if len(file.readlines()) < lines: lines = len(file.readlines())
+            for line in (file.readlines() [-lines:]):
+                msg += f"{line}\n"
+        msg +=  "```"
+    else:
+        msg = "Couldn't do that as the log file doesn't exist."
+        await tools.respondEmbed(
+            title="Error",
+            emoji="⚠️",
+            msg=msg,
+            type="message",
+            ctx=ctx, client=client
+        )
+
 # Check if the bot was restarted using the restart command
 restarted = os.getenv("RESTARTED", "false").lower() == "true"
 restart_channel_id = int(os.getenv("RESTART_CHANNEL_ID", "0"))
