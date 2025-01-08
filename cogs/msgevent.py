@@ -17,7 +17,7 @@ class MsgEvent(commands.Cog):
         if message.guild.id != 571632708833378321: return
         if message.author == self.client.user: return
         for keyword, answer in self.msgEvents.items():
-            if keyword in message.content:
+            if keyword in message.content.lower():
                 return await message.channel.send(answer)
 
 def setup(client):
