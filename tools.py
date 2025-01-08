@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import discord
+import os
 
 def printFormat(msg: str, type: str = "message"):
     """small function to simplify console output formatting
@@ -28,6 +29,8 @@ def printFormat(msg: str, type: str = "message"):
     indentation = 4
     #    time for timestamp, formatted as hrs:min:sec
     cur_time = datetime.now().strftime("%H:%M:%S")
+    #    silly little thing for gcloud so my log file doesnt look like cancer
+    if os.path.isfile("./log.txt"): cur_time = datetime.now().strftime("%d-%m-%Y  %H:%M:%S")
 
     print(
         f"{' ' * indentation}"  # print {indentation} amount of spaces
