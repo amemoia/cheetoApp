@@ -106,7 +106,7 @@ async def embed_test(ctx):
     )
 
 @client.command(name="print", aliases=['gimme'])
-async def print_log_contents(ctx, lines):
+async def print_log_contents(ctx, lines: str = "5"):
     if not await client.is_owner(ctx.author): return await ctx.send("fuck off")
     if os.path.isfile("./log.txt"):
         msg  =  "```\n"
